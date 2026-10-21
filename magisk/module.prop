@@ -1,0 +1,6 @@
+id=scheduleboard_boot
+name=Schedule Board Boot
+version=0.1.0
+versionCode=1
+author=Doublesail
+description=Launch the installed Schedule Board once after Android has booted. No watchdog or system settings changes.

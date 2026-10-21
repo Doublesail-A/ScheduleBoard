@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">日程牌</string>
+    <string name="channel_startup">开机提示</string>
+    <string name="startup_notification_title">日程牌已就绪</string>
+    <string name="startup_notification_body">点按打开日程牌；设为默认桌面可在开机后自动显示。</string>
+    <string name="settings_title">运行设置</string>
+    <string name="keep_screen_on">保持屏幕常亮</string>
+    <string name="immersive">全屏显示</string>
+    <string name="dynamic_color">壁纸动态取色</string>
+    <string name="dynamic_color_unavailable">需要 Android 12 或更高版本</string>
+    <string name="auto_start">开机启动辅助</string>
+    <string name="auto_start_detail">控制开机广播启动和提示；默认桌面及 Magisk 模块独立生效。</string>
+    <string name="theme_title">主题</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="home_selected">已设为默认桌面</string>
+    <string name="home_not_selected">建议设为默认桌面，让系统在启动后打开日程牌。</string>
+    <string name="choose_home">设为默认桌面</string>
+    <string name="home_settings">默认桌面设置</string>
+    <string name="system_settings">打开系统设置</string>
+    <string name="notification_permission">允许开机提示通知</string>
+    <string name="system_action_error">无法打开此系统页面，请从系统设置中操作。</string>
+    <string name="dismiss">关闭</string>
+</resources>

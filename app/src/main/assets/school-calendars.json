@@ -1,0 +1,462 @@
+{
+  "version": 1,
+  "checkedOn": "2026-10-20",
+  "calendars": [
+    {
+      "school": "FAFU",
+      "year": "2021-2022",
+      "term": "1",
+      "firstWeek": "2021-08-29",
+      "source": "https://jwc.fafu.edu.cn/_upload/article/files/5e/75/5dd10a194ddab20475e01eb87868/9b1d4d76-c31b-4c63-8568-b73c08347757.xls",
+      "holidays": [
+        {
+          "name": "中秋节",
+          "from": "2021-09-19",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "国庆节",
+          "from": "2021-10-01",
+          "days": 7,
+          "changes": {}
+        },
+        {
+          "name": "校运会",
+          "from": "2021-11-03",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "寒假",
+          "from": "2022-01-15",
+          "days": 34,
+          "changes": {}
+        },
+        {
+          "name": "调课",
+          "from": "2021-09-20",
+          "days": 0,
+          "changes": {
+            "2021-09-20": "2021-09-18",
+            "2021-10-05": "2021-09-26",
+            "2021-10-06": "2021-10-09"
+          }
+        }
+      ]
+    },
+    {
+      "school": "FAFU",
+      "year": "2021-2022",
+      "term": "2",
+      "firstWeek": "2022-02-20",
+      "source": "https://jwc.fafu.edu.cn/c2/c8/c2011a312008/page.htm",
+      "holidays": [
+        {
+          "name": "清明节",
+          "from": "2022-04-03",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "劳动节",
+          "from": "2022-04-30",
+          "days": 5,
+          "changes": {}
+        },
+        {
+          "name": "端午节",
+          "from": "2022-06-03",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "暑假",
+          "from": "2022-07-09",
+          "days": 48,
+          "changes": {}
+        },
+        {
+          "name": "调课",
+          "from": "2022-04-04",
+          "days": 0,
+          "changes": {
+            "2022-04-04": "2022-04-02",
+            "2022-05-03": "2022-04-24",
+            "2022-05-04": "2022-05-07"
+          }
+        }
+      ]
+    },
+    {
+      "school": "FAFU",
+      "year": "2022-2023",
+      "term": "1",
+      "firstWeek": "2022-08-28",
+      "source": "https://jwc.fafu.edu.cn/f5/8a/c2011a325002/page.htm",
+      "holidays": [
+        {
+          "name": "中秋节",
+          "from": "2022-09-10",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "国庆节",
+          "from": "2022-10-01",
+          "days": 7,
+          "changes": {}
+        },
+        {
+          "name": "校运会",
+          "from": "2022-11-02",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "校运会",
+          "from": "2022-12-24",
+          "days": 7,
+          "changes": {}
+        },
+        {
+          "name": "元旦",
+          "from": "2022-12-31",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "校运会",
+          "from": "2023-01-03",
+          "days": 4,
+          "changes": {}
+        },
+        {
+          "name": "寒假",
+          "from": "2023-01-07",
+          "days": 34,
+          "changes": {}
+        },
+        {
+          "name": "调课",
+          "from": "2022-10-06",
+          "days": 0,
+          "changes": {
+            "2022-10-06": "2022-10-08",
+            "2022-10-07": "2022-10-09"
+          }
+        }
+      ]
+    },
+    {
+      "school": "FAFU",
+      "year": "2022-2023",
+      "term": "2",
+      "firstWeek": "2023-02-12",
+      "source": "https://jwc.fafu.edu.cn/33/24/c2011a340772/page.htm",
+      "holidays": [
+        {
+          "name": "清明节",
+          "from": "2023-04-05",
+          "days": 1,
+          "changes": {}
+        },
+        {
+          "name": "端午节",
+          "from": "2023-06-22",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "暑假",
+          "from": "2023-07-05",
+          "days": 58,
+          "changes": {}
+        },
+        {
+          "name": "调课",
+          "from": "2023-05-02",
+          "days": 0,
+          "changes": {
+            "2023-05-02": "2023-04-23",
+            "2023-05-03": "2023-05-06",
+            "2023-06-23": "2023-06-25"
+          }
+        }
+      ]
+    },
+    {
+      "school": "FAFU",
+      "year": "2023-2024",
+      "term": "2",
+      "firstWeek": "2024-02-25",
+      "source": "https://jwc.fafu.edu.cn/91/b7/c2011a364983/page.htm",
+      "holidays": [
+        {
+          "name": "清明节",
+          "from": "2024-04-04",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "劳动节",
+          "from": "2024-05-01",
+          "days": 5,
+          "changes": {}
+        },
+        {
+          "name": "端午节",
+          "from": "2024-06-08",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "暑假",
+          "from": "2024-07-03",
+          "days": 59,
+          "changes": {}
+        },
+        {
+          "name": "调课",
+          "from": "2024-04-05",
+          "days": 0,
+          "changes": {
+            "2024-04-05": "2024-04-07",
+            "2024-05-02": "2024-04-28",
+            "2024-05-03": "2024-05-11"
+          }
+        }
+      ]
+    },
+    {
+      "school": "FAFU",
+      "year": "2024-2025",
+      "term": "1",
+      "firstWeek": "2024-09-01",
+      "source": "https://jwc.fafu.edu.cn/f1/5e/c2011a389470/page.htm",
+      "holidays": [
+        {
+          "name": "中秋节",
+          "from": "2024-09-15",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "国庆节",
+          "from": "2024-10-01",
+          "days": 7,
+          "changes": {}
+        },
+        {
+          "name": "校运会",
+          "from": "2024-11-06",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "元旦",
+          "from": "2025-01-01",
+          "days": 1,
+          "changes": {}
+        },
+        {
+          "name": "寒假",
+          "from": "2025-01-11",
+          "days": 36,
+          "changes": {}
+        },
+        {
+          "name": "调课",
+          "from": "2024-09-16",
+          "days": 0,
+          "changes": {
+            "2024-09-16": "2024-09-14",
+            "2024-10-02": "2024-09-29",
+            "2024-10-07": "2024-10-12"
+          }
+        }
+      ]
+    },
+    {
+      "school": "FAFU",
+      "year": "2024-2025",
+      "term": "2",
+      "firstWeek": "2025-02-16",
+      "source": "https://jwc.fafu.edu.cn/10/56/c2011a397398/page.htm",
+      "holidays": [
+        {
+          "name": "清明节",
+          "from": "2025-04-04",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "劳动节",
+          "from": "2025-05-01",
+          "days": 5,
+          "changes": {}
+        },
+        {
+          "name": "端午节",
+          "from": "2025-05-31",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "暑假",
+          "from": "2025-07-03",
+          "days": 59,
+          "changes": {}
+        },
+        {
+          "name": "调课",
+          "from": "2025-05-05",
+          "days": 0,
+          "changes": {
+            "2025-05-05": "2025-04-27"
+          }
+        }
+      ]
+    },
+    {
+      "school": "FAFU",
+      "year": "2025-2026",
+      "term": "1",
+      "firstWeek": "2025-08-31",
+      "source": "https://jwc.fafu.edu.cn/4b/b9/c2011a412601/page.htm",
+      "holidays": [
+        {
+          "name": "国庆节、中秋节",
+          "from": "2025-10-01",
+          "days": 8,
+          "changes": {}
+        },
+        {
+          "name": "校运会",
+          "from": "2025-11-05",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "元旦",
+          "from": "2026-01-01",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "寒假",
+          "from": "2026-01-22",
+          "days": 41,
+          "changes": {}
+        },
+        {
+          "name": "调课",
+          "from": "2025-10-07",
+          "days": 0,
+          "changes": {
+            "2025-10-07": "2025-09-28",
+            "2025-10-08": "2025-10-11"
+          }
+        }
+      ]
+    },
+    {
+      "school": "FAFU",
+      "year": "2025-2026",
+      "term": "2",
+      "firstWeek": "2026-03-01",
+      "source": "https://jwc.fafu.edu.cn/99/c6/c2011a432582/page.htm",
+      "holidays": [
+        {
+          "name": "清明节",
+          "from": "2026-04-04",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "劳动节",
+          "from": "2026-05-01",
+          "days": 5,
+          "changes": {}
+        },
+        {
+          "name": "端午节",
+          "from": "2026-06-19",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "暑假",
+          "from": "2026-07-09",
+          "days": 52,
+          "changes": {}
+        },
+        {
+          "name": "调课",
+          "from": "2026-05-04",
+          "days": 0,
+          "changes": {
+            "2026-05-04": "2026-05-09"
+          }
+        }
+      ]
+    },
+    {
+      "school": "FAFU",
+      "year": "2026-2027",
+      "term": "1",
+      "firstWeek": "2026-08-30",
+      "source": "https://jwc.fafu.edu.cn/99/bd/c2011a432573/page.htm",
+      "holidays": [
+        {
+          "name": "中秋节",
+          "from": "2026-09-25",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "国庆节",
+          "from": "2026-10-01",
+          "days": 7,
+          "changes": {}
+        },
+        {
+          "name": "校运会",
+          "from": "2026-11-25",
+          "days": 3,
+          "changes": {}
+        },
+        {
+          "name": "寒假",
+          "from": "2027-01-21",
+          "days": 31,
+          "changes": {}
+        },
+        {
+          "name": "调课",
+          "from": "2026-10-06",
+          "days": 0,
+          "changes": {
+            "2026-10-06": "2026-09-20",
+            "2026-10-07": "2026-10-10"
+          }
+        }
+      ]
+    },
+    {
+      "school": "FAFU",
+      "year": "2026-2027",
+      "term": "2",
+      "firstWeek": "2027-02-21",
+      "source": "https://jwc.fafu.edu.cn/99/be/c2011a432574/page.htm",
+      "holidays": [
+        {
+          "name": "暑假",
+          "from": "2027-07-01",
+          "days": 59,
+          "changes": {}
+        }
+      ]
+    }
+  ]
+}

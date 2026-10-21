@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.ScheduleBoard" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:colorAccent">#B7D195</item>
+        <item name="android:windowBackground">#12150E</item>
+    </style>
+</resources>
