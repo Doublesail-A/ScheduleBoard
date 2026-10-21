@@ -50,7 +50,7 @@ class SchoolCalendarStore(private val context: Context) {
         val record = (0 until calendars.length()).map { calendars.getJSONObject(it) }.firstOrNull {
             it.getString("school") == "FAFU" && it.getString("year") == year && it.getString("term") == term
         }
-        require(record != null || override != null) { "该学期尚无已核对校历，请在登录页填写第一周日期后重试" }
+        require(record != null || override != null) { "教务当前学期尚无已核对校历，请稍后更新；原课表已保留" }
         val closed = mutableSetOf<LocalDate>()
         val moves = mutableMapOf<LocalDate, LocalDate>()
         record?.getJSONArray("holidays")?.let { holidays ->

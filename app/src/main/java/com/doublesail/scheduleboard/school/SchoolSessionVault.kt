@@ -14,11 +14,11 @@ import javax.crypto.spec.GCMParameterSpec
 import org.json.JSONObject
 
 data class SchoolProfile(val session: SchoolSession, val year: String, val term: String, val campus: Campus,
-    val firstWeekOverride: LocalDate? = null) {
+    val firstWeekOverride: LocalDate? = null, val password: String? = null) {
     override fun toString() = "SchoolProfile(redacted)"
 }
 
-/** Passwords are never stored. The renewable server session is encrypted with an app-owned Keystore key. */
+/** Credentials and session are encrypted together with an app-owned Android Keystore key. */
 class SchoolSessionVault(context: Context) {
     private val file = AtomicFile(File(context.filesDir, "school-session.enc"))
     fun read(): SchoolProfile? {
@@ -30,7 +30,8 @@ class SchoolSessionVault(context: Context) {
         val json = JSONObject(cipher.doFinal(bytes.copyOfRange(13, bytes.size)).toString(Charsets.UTF_8))
         return SchoolProfile(SchoolSession(json.getString("account"), json.getString("name"), json.getString("token"), json.optString("cookie")),
             json.getString("year"), json.getString("term"), Campus.valueOf(json.getString("campus")),
-            json.optString("firstWeek").takeIf(String::isNotEmpty)?.let(LocalDate::parse))
+            json.optString("firstWeek").takeIf(String::isNotEmpty)?.let(LocalDate::parse),
+            json.optString("password").takeIf(String::isNotEmpty))
     }
 
     fun write(profile: SchoolProfile) {
@@ -39,6 +40,7 @@ class SchoolSessionVault(context: Context) {
             put("token", profile.session.token); put("cookie", profile.session.cookie)
             put("year", profile.year); put("term", profile.term); put("campus", profile.campus.name)
             put("firstWeek", profile.firstWeekOverride?.toString().orEmpty())
+            put("password", profile.password.orEmpty())
         }
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, key())

@@ -188,7 +188,7 @@ private fun SettingsDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text("课表与待办", style = MaterialTheme.typography.titleSmall)
-                FilledTonalButton(onClick = onSchoolLogin) { Text(if (school.connected) "重新登录 / 切换学期" else "登录福建农林大学教务") }
+                FilledTonalButton(onClick = onSchoolLogin) { Text(if (school.connected) "重新登录 / 更换账号" else "登录福建农林大学教务") }
                 if (school.connected) {
                     Text(school.termLabel, style = MaterialTheme.typography.bodyMedium)
                     TextButton(onClick = onSyncSchool, enabled = !school.syncing && !school.requiresLogin) {

@@ -5,7 +5,13 @@
 - 原项目 [woolsen/iFAFU](https://github.com/woolsen/iFAFU)，原作者 woolsen 及贡献者。
 - 用户提供的维护版本 [Doublesail-A/iFAFU](https://github.com/Doublesail-A/iFAFU)，参考分支 codex/material-you-redesign，提交 fdddcafee6459eebde6a7102abbcfc4327bc6be7。
 - app/src/main/assets/school-calendars.json 来自该提交的 data/school-calendars.json，包含各学期学校原始校历来源 URL。运行时按同一维护分支更新，不把未公布的日程当作已确认安排。
-- 参考其旧版正方 Table1/DBGrid 格式、单双周、教务调停换补课、周日周起点，以及本部/旗山作息。此应用自行实现 HTTP 客户端、解析和日期展开；不依赖第三方课表解析服务，不复制其登录数据库、验证码模型或私有账号数据。
+- 参考其旧版正方 Table1/DBGrid 格式、单双周、教务调停换补课、周日周起点，以及本部/旗山作息。此应用自行实现 HTTP 客户端、解析和日期展开；不依赖第三方课表解析服务，不复制其登录数据库或私有账号数据。
+
+验证码识别：
+
+- app/src/main/assets/theta.dat 直接来自上述 iFAFU 参考提交的同名资源。SchoolCaptchaRecognizer.kt 按 VerifyParser.java 的灰度、分割和 34 类线性分类流程改写为 Kotlin；省略不影响分类结果的 sigmoid 运算。
+- 来源：[VerifyParser.java](https://github.com/Doublesail-A/iFAFU/blob/fdddcafee6459eebde6a7102abbcfc4327bc6be7/app/src/main/java/cn/ifafu/ifafu/service/parser/VerifyParser.java)、[theta.dat](https://github.com/Doublesail-A/iFAFU/blob/fdddcafee6459eebde6a7102abbcfc4327bc6be7/app/src/main/assets/theta.dat)，原项目 woolsen/iFAFU 及贡献者。
+- 参考快照未包含根目录许可证；保留来源归属，不对这些参考资源另行宣称许可或所有权。
 
 界面基于用户提供的设计图实现为原生 Compose；预览中的课程、姓名、地点及待办仅用于匹配设计样本。
 
