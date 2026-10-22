@@ -48,6 +48,10 @@ import com.doublesail.scheduleboard.school.SchoolSyncState
 import com.doublesail.scheduleboard.ui.theme.ScheduleBoardTheme
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.LaunchedEffect
+import com.doublesail.scheduleboard.tasks.BoardTask
+import com.doublesail.scheduleboard.tasks.google.GoogleTasksRepository
+import com.doublesail.scheduleboard.pomodoro.PomodoroRepository
 
 data class StartupEnvironment(
     val isDefaultHome: Boolean = false,
@@ -66,9 +70,23 @@ fun BoardApp(
     onImportTimetable: () -> Unit,
     onSchoolLogin: () -> Unit,
     onDarkTheme: (Boolean) -> Unit,
+    googleTasks: GoogleTasksRepository,
+    pomodoro: PomodoroRepository,
+    onGoogleTasks: () -> Unit,
+    onExactAlarmSettings: () -> Unit,
+    openPomodoroRequest: Int = 0,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val school by viewModel.schoolState.collectAsStateWithLifecycle()
+    val google by googleTasks.state.collectAsStateWithLifecycle()
+    val googleStatus by googleTasks.status.collectAsStateWithLifecycle()
+    val timer by pomodoro.state.collectAsStateWithLifecycle()
+    val remaining by pomodoro.remaining.collectAsStateWithLifecycle()
+    var timerOpen by rememberSaveable { mutableStateOf(false) }
+    var editingTask by remember { mutableStateOf<BoardTask?>(null) }
+    var editTitle by remember { mutableStateOf("") }
+    var confirmDelete by remember { mutableStateOf(false) }
+    var confirmClear by remember { mutableStateOf(false) }
     val settings = state.settings ?: BoardSettings()
     var settingsOpen by rememberSaveable { mutableStateOf(false) }
     var addingTask by rememberSaveable { mutableStateOf(false) }
@@ -76,7 +94,9 @@ fun BoardApp(
     var savingTask by remember { mutableStateOf(false) }
     var selectedEvent by remember { mutableStateOf<ScheduleEvent?>(null) }
     val scope = rememberCoroutineScope()
-    BackHandler(enabled = environment.isDefaultHome && !settingsOpen) { settingsOpen = true }
+    LaunchedEffect(openPomodoroRequest) { if (openPomodoroRequest > 0) timerOpen = true }
+    BackHandler(enabled = environment.isDefaultHome && !settingsOpen && !timerOpen) { settingsOpen = true }
+    BackHandler(enabled = timerOpen) { timerOpen = false }
 
     ScheduleBoardTheme(settings, onDarkTheme) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -84,11 +104,19 @@ fun BoardApp(
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
+            } else if (timerOpen) {
+                PomodoroScreen(timer, remaining, onToggle = { scope.launch { pomodoro.toggle() } },
+                    onReset = { scope.launch { pomodoro.reset() } },
+                    onSelect = { phase, minutes -> scope.launch { pomodoro.select(phase, minutes) } },
+                    onNext = { scope.launch { pomodoro.next() } }, onBack = { timerOpen = false },
+                    precise = pomodoro.exactAlarmsAllowed, onExactAlarmSettings = onExactAlarmSettings,
+                    notifications = environment.notificationsEnabled, onNotifications = onEnableNotifications)
             } else {
                 BoardDashboard(state.copy(syncWarning = if (school.requiresLogin) school.message ?: "请点击时钟更新教务登录信息"
                     else school.message?.takeIf { school.connected }), onOpenSettings = { settingsOpen = true },
                     onAddTask = { addingTask = true }, onTaskCompleted = viewModel::setTaskCompleted,
-                    onEventClick = { selectedEvent = it })
+                    onEventClick = { selectedEvent = it }, onOpenPomodoro = { timerOpen = true },
+                    onEditTask = { editingTask = it; editTitle = it.title })
             }
         }
         if (settingsOpen) {
@@ -107,11 +135,35 @@ fun BoardApp(
                 state = state,
                 onImportTimetable = onImportTimetable,
                 onAddTask = { addingTask = true },
-                onClearCompleted = viewModel::clearCompletedTasks,
+                onClearCompleted = { confirmClear = true },
                 school = school, onSchoolLogin = onSchoolLogin,
                 onSyncSchool = viewModel::syncSchool, onLogoutSchool = viewModel::logoutSchool,
+                googleSummary = if (!google.connected) "当前使用本机待办" else
+                    "${google.listTitle} · ${google.edits.size} 项待上传" + if (googleStatus.syncing) " · 同步中" else "",
+                googleMessage = googleStatus.message, onGoogleTasks = onGoogleTasks,
+                onPomodoro = { settingsOpen = false; timerOpen = true },
             )
         }
+        editingTask?.let { task ->
+            AlertDialog(onDismissRequest = { editingTask = null }, title = { Text("编辑待办") },
+                text = { OutlinedTextField(editTitle, { editTitle = it }, label = { Text("待办事项") },
+                    isError = editTitle.trim().length !in 1..200, supportingText = { Text("${editTitle.length}/200") }, maxLines = 3) },
+                confirmButton = { TextButton(enabled = editTitle.trim().length in 1..200, onClick = {
+                    viewModel.renameTask(task.id, editTitle); editingTask = null
+                }) { Text("保存") } },
+                dismissButton = { Row {
+                    TextButton(onClick = { confirmDelete = true }) { Text("删除", color = MaterialTheme.colorScheme.error) }
+                    TextButton(onClick = { editingTask = null }) { Text("取消") }
+                } })
+            if (confirmDelete) AlertDialog(onDismissRequest = { confirmDelete = false }, title = { Text("删除此待办？") },
+                text = { Text(if (google.connected) "“${task.title}”也会从 Google Tasks 中删除；若它有子任务，子任务也会一起删除。" else task.title) },
+                confirmButton = { TextButton(onClick = { viewModel.deleteTask(task.id); confirmDelete = false; editingTask = null }) { Text("删除") } },
+                dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("取消") } })
+        }
+        if (confirmClear) AlertDialog(onDismissRequest = { confirmClear = false }, title = { Text("删除已完成待办？") },
+            text = { Text(if (google.connected) "将删除已完成项目及其子任务，并同步到 Google Tasks。" else "将删除本机的已完成项目。") },
+            confirmButton = { TextButton(onClick = { viewModel.clearCompletedTasks(); confirmClear = false }) { Text("删除") } },
+            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("取消") } })
         if (state.message != null || systemActionFailed) {
             AlertDialog(
                 onDismissRequest = { viewModel.dismissError(); onDismissSystemError() },
@@ -178,6 +230,10 @@ private fun SettingsDialog(
     onSchoolLogin: () -> Unit,
     onSyncSchool: () -> Unit,
     onLogoutSchool: () -> Unit,
+    googleSummary: String,
+    googleMessage: String?,
+    onGoogleTasks: () -> Unit,
+    onPomodoro: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -209,9 +265,15 @@ private fun SettingsDialog(
                     Text("最近更新：" + stamp.atZone(state.now.zone).format(DateTimeFormatter.ofPattern("M月d日 HH:mm")),
                         style = MaterialTheme.typography.bodySmall)
                 }
-                TextButton(onClick = onAddTask) { Text("添加本机待办") }
+                HorizontalDivider()
+                Text(googleSummary, style = MaterialTheme.typography.bodyMedium)
+                FilledTonalButton(onClick = onGoogleTasks) { Text("Google Tasks 账号与同步") }
+                googleMessage?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                Text("点击待办勾选，长按待办可重命名或删除。", style = MaterialTheme.typography.bodySmall)
+                TextButton(onClick = onAddTask) { Text("添加待办") }
                 TextButton(onClick = onClearCompleted, enabled = state.tasks.any { it.completed }) { Text("清理已完成待办") }
                 state.taskError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                TextButton(onClick = onPomodoro) { Text("打开番茄钟（主页左侧下滑）") }
                 HorizontalDivider()
                 ToggleRow(stringResource(R.string.keep_screen_on), settings.keepScreenOn, onKeepScreenOn)
                 ToggleRow(stringResource(R.string.immersive), settings.immersive, onImmersive)

@@ -1,5 +1,10 @@
 package com.doublesail.scheduleboard.ui
 
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -35,6 +40,8 @@ fun BoardDashboard(
     onAddTask: () -> Unit,
     onTaskCompleted: (String, Boolean) -> Unit,
     onEventClick: (ScheduleEvent) -> Unit,
+    onOpenPomodoro: () -> Unit = {},
+    onEditTask: (BoardTask) -> Unit = {},
 ) {
     BoxWithConstraints(Modifier.fillMaxSize().background(lerp(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.secondaryContainer, .48f))) {
         val unit = min(maxWidth.value / 1920f, maxHeight.value / 1080f)
@@ -44,7 +51,12 @@ fun BoardDashboard(
         ) {
             Row(Modifier.fillMaxSize().padding(start = (50 * unit).dp, end = (40 * unit).dp,
                 top = (20 * unit).dp, bottom = (74 * unit).dp)) {
-                Column(Modifier.weight(2.8f).fillMaxHeight()) {
+                Column(Modifier.weight(2.8f).fillMaxHeight().pointerInput(onOpenPomodoro) {
+                    var distance = 0f
+                    detectVerticalDragGestures(onDragStart = { distance = 0f }, onDragEnd = {
+                        if (distance > 32.dp.toPx()) onOpenPomodoro()
+                    }, onDragCancel = { distance = 0f }) { _, amount -> distance += amount }
+                }) {
                     Text(
                         state.now.format(DateTimeFormatter.ofPattern("HH:mm")),
                         fontSize = (256 * unit).sp, lineHeight = (270 * unit).sp,
@@ -90,7 +102,7 @@ fun BoardDashboard(
                         }
                     } else {
                         LazyColumn(Modifier.weight(1f)) {
-                            items(state.tasks, key = { it.id }) { task -> TaskRow(task, unit, onTaskCompleted) }
+                            items(state.tasks, key = { it.id }) { task -> TaskRow(task, unit, onTaskCompleted, onEditTask) }
                         }
                     }
                     TextButton(onClick = onAddTask, modifier = Modifier.align(Alignment.End).height(40.dp)) {
@@ -132,12 +144,14 @@ private fun CourseCard(event: ScheduleEvent, countdown: String, unit: Float, mod
 }
 
 @Composable
-private fun TaskRow(task: BoardTask, unit: Float, onTaskCompleted: (String, Boolean) -> Unit) {
+private fun TaskRow(task: BoardTask, unit: Float, onTaskCompleted: (String, Boolean) -> Unit, onEditTask: (BoardTask) -> Unit) {
     Column {
         Row(
             Modifier.fillMaxWidth().height((188 * unit).dp).sizeIn(minHeight = 48.dp)
-                .toggleable(value = task.completed, role = Role.Checkbox,
-                    onValueChange = { onTaskCompleted(task.id, it) }).padding(vertical = (4 * unit).dp),
+                .combinedClickable(role = Role.Checkbox, onClick = { onTaskCompleted(task.id, !task.completed) },
+                    onLongClickLabel = "编辑待办", onLongClick = { onEditTask(task) })
+                .semantics { toggleableState = if (task.completed) androidx.compose.ui.state.ToggleableState.On else androidx.compose.ui.state.ToggleableState.Off }
+                .padding(vertical = (4 * unit).dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy((18 * unit).dp),
         ) {
             Text(task.title, modifier = Modifier.weight(1f), fontSize = (55 * unit).sp, lineHeight = (70 * unit).sp,

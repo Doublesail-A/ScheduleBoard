@@ -7,11 +7,15 @@ import com.doublesail.scheduleboard.tasks.LocalTaskRepository
 import com.doublesail.scheduleboard.startup.StartupNotifications
 import com.doublesail.scheduleboard.time.AndroidBoardClock
 import com.doublesail.scheduleboard.school.SchoolSyncRepository
+import com.doublesail.scheduleboard.tasks.google.GoogleTasksRepository
+import com.doublesail.scheduleboard.pomodoro.PomodoroRepository
 
 class ScheduleBoardApplication : Application() {
     val settingsRepository by lazy { SettingsRepository(this) }
     val scheduleRepository by lazy { IcsScheduleRepository(this) }
-    val taskRepository by lazy { LocalTaskRepository(this) }
+    val localTasks by lazy { LocalTaskRepository(this) }
+    val taskRepository by lazy { GoogleTasksRepository(this, localTasks) }
+    val pomodoro by lazy { PomodoroRepository(this) }
     val schoolSync by lazy { SchoolSyncRepository(this, scheduleRepository) }
     val boardClock by lazy { AndroidBoardClock(this) }
 

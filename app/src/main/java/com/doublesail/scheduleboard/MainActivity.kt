@@ -37,6 +37,7 @@ class MainActivity : ComponentActivity() {
     private val homeController by lazy { HomeController(this) }
     private var environment by mutableStateOf(StartupEnvironment())
     private var systemActionFailed by mutableStateOf(false)
+    private var pomodoroRequest by mutableStateOf(0)
     private val boardViewModel: BoardViewModel by viewModels {
         val app = application as ScheduleBoardApplication
         viewModelFactory {
@@ -58,6 +59,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intent.getBooleanExtra("open_pomodoro", false)) pomodoroRequest++
         enableEdgeToEdge()
         windowController = BoardWindowController(this)
         windowController.apply(BoardSettings())
@@ -73,6 +75,7 @@ class MainActivity : ComponentActivity() {
                 launch {
                     while (isActive) {
                         (application as ScheduleBoardApplication).schoolSync.syncIfDue()
+                        (application as ScheduleBoardApplication).taskRepository.sync()
                         delay(60_000L)
                     }
                 }
@@ -89,6 +92,13 @@ class MainActivity : ComponentActivity() {
                 onEnableNotifications = ::enableNotifications,
                 onImportTimetable = { performSystemAction { timetablePicker.launch(arrayOf("*/*")) } },
                 onSchoolLogin = { startActivity(Intent(this, com.doublesail.scheduleboard.school.SchoolLoginActivity::class.java)) },
+                googleTasks = (application as ScheduleBoardApplication).taskRepository,
+                pomodoro = (application as ScheduleBoardApplication).pomodoro,
+                onGoogleTasks = { startActivity(Intent(this, com.doublesail.scheduleboard.tasks.google.GoogleTasksActivity::class.java)) },
+                onExactAlarmSettings = { performSystemAction {
+                    if (Build.VERSION.SDK_INT >= 31) startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                        "package:$packageName".toUri()))
+                } }, openPomodoroRequest = pomodoroRequest,
                 onDarkTheme = { dark ->
                     WindowCompat.getInsetsController(window, window.decorView).apply {
                         isAppearanceLightStatusBars = !dark
@@ -104,11 +114,13 @@ class MainActivity : ComponentActivity() {
         refreshEnvironment()
         StartupNotifications.cancel(this)
         (application as ScheduleBoardApplication).schoolSync.syncIfDue()
+        lifecycleScope.launch { (application as ScheduleBoardApplication).taskRepository.sync() }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        if (intent.getBooleanExtra("open_pomodoro", false)) pomodoroRequest++
         windowController.setBootWakeup(intent.getBooleanExtra(StartupNotifications.ExtraBootLaunch, false))
     }
 

@@ -6,3 +6,8 @@ local.properties
 **/build/
 *.jks
 *.keystore
+*.p12
+*.pem
+release-assets/
+release-notes.md
+__pycache__/

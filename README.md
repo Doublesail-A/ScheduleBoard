@@ -1,14 +1,15 @@
-# 日程牌 · 0.2.2
+# 日程牌 · 0.3.0
 
 为 Sony Xperia XZ1 Compact（Android 12、1280×720、16:9）准备的横屏常亮日程牌。界面按提供的布局实现：左侧时钟与接下来两项安排，右侧待办。
 
 ## 安装后使用
 
-1. 安装 ScheduleBoard-0.2.2-debug.apk；可覆盖同签名的 0.1.0 / 0.2.x 测试版。
+1. 从 [GitHub Releases](https://github.com/Doublesail-A/ScheduleBoard/releases) 下载 ScheduleBoard-0.3.0.apk；固定签名可覆盖原同签名测试版，保留课表和登录信息。
 2. 点击大时钟打开设置，选择“登录福建农林大学教务”。
 3. 只需输入学号和教务密码，点击“登录并同步课表”。验证码在本机自动处理，学期使用教务当前默认值，校历自动获取。
-4. 右下角“＋”添加本机待办；点击待办整行可完成或取消完成。
+4. 设置 → Google Tasks 账号与同步，登录自己的 Google 账号并选择清单（首次需完成 [Google Cloud 配置](docs/GOOGLE-TASKS.md)）。未连接 Google 时继续使用本机待办；“＋”添加，点击完成/取消完成，长按重命名/删除。
 5. 点击课程卡片查看完整名称、时间、教室和教师。长标题会截断，待办最多显示两行，可滚动查看更多。
+6. 在主页左侧时钟/课程区域向下滑，打开番茄钟；也可从设置进入。右侧待办仍可独立滚动。
 
 没有预装演示课表或示例待办。预览图中的内容仅存在于渲染测试。
 
@@ -39,11 +40,15 @@
 
 ## 待办与 Google Tasks
 
-本版待办为本机 DataStore 存储：添加、完成/取消完成、清理已完成，重启后保留。已完成项目移至列表后部，列表可滚动。
+Google Tasks 已接入原生 Google Play 服务授权和实际 Tasks API。支持选清单、双向新增/重命名/完成/删除、离线缓存、持久化待上传队列和令牌续取。前台约每分钟、后台约 15 分钟检查，也可立即同步；系统调度和网络会影响后台时间。
 
-Google Tasks 尚未接入云端。已建立独立 TaskRepository，待授权方式和后端确定后可以替换数据源。若使用 Google Tasks，手机端勾选完成需要 tasks 写入授权；Android 原生 Google 授权还需配置 Cloud 项目、包名和 APK 签名 SHA-1。Google Play 服务是否可用尚待确认。依据：[Tasks 授权范围](https://developers.google.com/workspace/tasks/auth)、[Android 授权设置](https://developer.android.com/identity/authorization)。
+本机待办独立保存，不会在登录后自动上传。Google 的备注、日期等未修改字段保留；新建任务的备注包含同步去重标记。切换账号/清单前先上传修改；撤销授权时保留云端任务。完整行为、Google Cloud 配置和实际账号验证步骤见 [Google Tasks 设置](docs/GOOGLE-TASKS.md)。OAuth 配置和真实账号验证的当前状态见 [验证记录](BUILD-STATUS.md)。
 
-若更偏好开放协议，可考虑 CalDAV / Nextcloud Tasks，Tasks.org 可作为其他设备上的客户端。此方向也尚未集成到日程牌。参考：[Tasks.org 同步](https://tasks.org/docs/sync/)、[Nextcloud Tasks](https://github.com/nextcloud/tasks)。
+## 番茄钟
+
+主页左侧向下滑打开，或点击时钟 → 打开番茄钟。横屏左侧圆环与内部倒计时，右侧为阶段、开始/暂停/继续、重置、下一阶段与自定义时长；使用官方 Material 3 和系统动态色。专注默认 25 分钟、短休息 5 分钟、长休息 15 分钟，每 4 次专注建议长休息，不自动开始下一阶段。
+
+退出页面仍计时；进程重建恢复截止时间，同次开机不受手动调整时间影响，整机重启后按墙钟恢复并重新绑定单调时钟。结束显示“时间到”并发通知。Android 12+ 可从页面允许精确提醒；未允许时前台正常倒计时，后台提醒可能延迟。通知关闭时需打开通知才能收到系统结束提醒；强行停止应用后系统不会继续交付闹钟，重新打开时恢复状态。依据：[Android 闹钟调度](https://developer.android.com/develop/background-work/services/alarms)。
 
 ## 显示与开机启动
 
@@ -61,7 +66,7 @@ Magisk 方式：可继续使用先前的 ScheduleBoard-Magisk-0.1.0.zip，在 Ma
 
 ## 构建与验证
 
-需要 JDK 17+（推荐 21）、SDK Platform 36、Build Tools 35.0.0。最低 API 23，主要适配并按用户设备目标验证 Android 12。Gradle 8.13、AGP 8.13.2、Kotlin 2.2.21、Compose BOM 2025.12.00 / Material 3 1.4.0。
+需要 JDK 17+（推荐 21）、SDK Platform 36、Build Tools 35.0.0。最低 API 24（Google 官方授权库要求），主要适配 Android 12。Gradle 8.13、AGP 8.13.2、Kotlin 2.2.21、Compose BOM 2025.12.00 / Material 3 1.4.0。
 
 常规编译和单元测试：
 
@@ -73,13 +78,13 @@ Magisk 方式：可继续使用先前的 ScheduleBoard-Magisk-0.1.0.zip，在 Ma
 
 渲染图在 app/build/reports/board-render/。这些是 Android 12 Robolectric 原生 View / Canvas 渲染，使用测试数据；不是实机或模拟器截图。测试数据不会加入 APK。
 
-构建详情、检查结果与未验证边界见 BUILD-STATUS.md。本版是 Debug 签名测试 APK；正式发布请配置自己的签名。
+构建详情、检查结果与未验证边界见 BUILD-STATUS.md。Release 运行 R8、关闭 debuggable，采用固定证书；签名设置见 [发布说明](docs/RELEASES.md)。
 
 ## 版本管理
 
 公开仓库：[Doublesail-A/ScheduleBoard](https://github.com/Doublesail-A/ScheduleBoard)。主分支为 main，CHANGELOG.md 记录各版本；版本号位于 app/build.gradle.kts。仓库保留 0.2.0 基线与后续修复提交。
 
-GitHub Actions 在推送或 PR 时编译、运行单元测试/原生 Compose 测试与 Lint，并保存 Debug APK 和测试报告。首次运行状态以 Actions 页面为准。CI 的临时 Debug 签名与本机安装包不同，不能保证覆盖安装；正式分发前需统一签名。签名密钥不提交到仓库。
+GitHub Actions 在推送或 PR 时编译、运行单元测试/原生 Compose 测试与 Lint。main 上版本递增后自动构建固定签名 Release，上传 APK、签名信息、说明与 SHA-256 校验；PR 只验证。后续每个应用更新都必须递增版本并通过 GitHub 构建发布，不覆盖已发布二进制。仓库需一次性配置签名 Secret，详见 [GitHub 构建和发布](docs/RELEASES.md)；未配置时发布明确失败，不能用临时随机签名代替。
 
 手机实机集成测试：连接已授权 ADB、已解锁且亮屏的设备，执行 `./gradlew connectedDebugAndroidTest`。首次无需账号即可测试教务网络、验证码识别和 Keystore；完成应用内登录后还会验证加密登录信息的自动续登。该测试会暂时切走应用，测试结束后可重新打开日程牌。
 

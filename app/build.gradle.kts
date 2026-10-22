@@ -10,18 +10,28 @@ android {
 
     defaultConfig {
         applicationId = "com.doublesail.scheduleboard"
-        minSdk = 23
+        minSdk = 24
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.2.2"
+        versionCode = 5
+        versionName = "0.3.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    val distributionKeystore = providers.environmentVariable("SCHEDULEBOARD_KEYSTORE").orNull
+    signingConfigs {
+        if (distributionKeystore != null) create("distribution") {
+            storeFile = file(distributionKeystore)
+            storePassword = providers.environmentVariable("SCHEDULEBOARD_STORE_PASSWORD").getOrElse("android")
+            keyAlias = providers.environmentVariable("SCHEDULEBOARD_KEY_ALIAS").getOrElse("androiddebugkey")
+            keyPassword = providers.environmentVariable("SCHEDULEBOARD_KEY_PASSWORD").getOrElse("android")
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (distributionKeystore != null) signingConfig = signingConfigs.getByName("distribution")
         }
     }
     compileOptions {
@@ -46,6 +56,14 @@ android {
 
 kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) } }
 
+tasks.matching { it.name == "assembleRelease" }.configureEach {
+    doFirst {
+        require(providers.environmentVariable("SCHEDULEBOARD_KEYSTORE").isPresent) {
+            "Set SCHEDULEBOARD_KEYSTORE to the fixed distribution keystore; unsigned releases must not be distributed."
+        }
+    }
+}
+
 dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.androidx.core.ktx)
@@ -61,6 +79,10 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.jsoup)
     implementation(libs.androidx.work.runtime)
+    implementation("com.google.android.gms:play-services-auth:22.0.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)

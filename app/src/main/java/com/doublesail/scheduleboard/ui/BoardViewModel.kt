@@ -66,6 +66,8 @@ class BoardViewModel(
     fun setAutoStart(value: Boolean) = persist { settingsRepository.setAutoStart(value) }
     fun setThemeMode(value: ThemeMode) = persist { settingsRepository.setThemeMode(value) }
     fun setTaskCompleted(id: String, completed: Boolean) = persist { taskRepository.setCompleted(id, completed) }
+    fun renameTask(id: String, title: String) = persist { taskRepository.rename(id, title) }
+    fun deleteTask(id: String) = persist { taskRepository.delete(id) }
     fun clearCompletedTasks() = persist { taskRepository.clearCompleted() }
     fun dismissError() { operation.value = operation.value.copy(message = null) }
 

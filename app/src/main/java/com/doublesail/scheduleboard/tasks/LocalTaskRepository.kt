@@ -41,6 +41,17 @@ class LocalTaskRepository(context: Context) : TaskRepository {
         store.edit { values -> values[Tasks] = encode(decode(values[Tasks]).filterNot { it.completed }) }
     }
 
+    override suspend fun rename(id: String, title: String) {
+        require(title.trim().length in 1..200) { "待办名称需要 1–200 个字符" }
+        store.edit { values -> values[Tasks] = encode(decode(values[Tasks]).map {
+            if (it.id == id) it.copy(title = title.trim()) else it
+        }) }
+    }
+
+    override suspend fun delete(id: String) {
+        store.edit { values -> values[Tasks] = encode(decode(values[Tasks]).filterNot { it.id == id }) }
+    }
+
     private fun decode(value: String?): List<BoardTask> {
         val list = JSONArray(value ?: "[]")
         return (0 until list.length()).map { index ->

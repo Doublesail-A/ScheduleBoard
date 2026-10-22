@@ -18,3 +18,5 @@
 运行依赖：AndroidX / Jetpack Compose / Material 3 / WorkManager（Apache-2.0），Kotlin / kotlinx.coroutines（Apache-2.0），jsoup（MIT）。官方项目及许可说明：[AndroidX](https://android.googlesource.com/platform/frameworks/support/)、[Kotlin](https://github.com/JetBrains/kotlin)、[jsoup](https://github.com/jhy/jsoup/blob/jsoup-1.18.3/LICENSE)。
 
 测试依赖：JUnit、Robolectric 及 AndroidX Test。Robolectric 仅用于可选的主机测试，不随 APK 打包。预览图为原生 View / Canvas 渲染，不冒充设备截图。
+
+0.3.0 新增：Google Play services Auth 22.0.0（Google 官方授权 SDK，遵循其适用的 Google SDK/开发者条款）；OkHttp 4.12.0 及 Okio（Apache-2.0）。授权由系统 Google 服务处理；REST 协议依据 [Google Tasks 官方文档](https://developers.google.com/workspace/tasks/reference/rest)，网络库来源与许可见 [OkHttp](https://github.com/square/okhttp/blob/parent-4.12.0/LICENSE.txt)、[Okio](https://github.com/square/okio)。MockWebServer 仅为测试依赖，不打包进 APK。
