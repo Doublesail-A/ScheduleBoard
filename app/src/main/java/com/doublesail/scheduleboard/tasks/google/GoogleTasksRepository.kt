@@ -30,7 +30,7 @@ class GoogleTasksRepository(context: Context, private val local: TaskRepository,
     private val source = Mutex()
     private val statusValue = MutableStateFlow(GoogleSyncStatus())
     val status = statusValue.asStateFlow()
-    private val cacheFlow = store.data.map { GoogleTaskCache.decode(it[Cache]) }
+    private val cacheFlow = store.data.map { GoogleTaskCache.decode(it[Cache]) }.flowOn(Dispatchers.IO)
     val state = cacheFlow.stateIn(scope, SharingStarted.Eagerly, GoogleTaskCache())
     override val snapshot = combine(cacheFlow, local.snapshot) { cloud, device ->
         if (cloud.connected) TaskSnapshot(cloud.tasks) else device

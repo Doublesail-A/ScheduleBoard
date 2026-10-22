@@ -14,6 +14,7 @@ import java.time.Instant
 import java.time.ZoneId
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -41,7 +42,7 @@ class IcsScheduleRepository(context: Context) : ScheduleRepository {
         }
     }.catch { error ->
         if (error is IOException) emit(ScheduleSnapshot(error = "无法读取课表，请检查存储空间")) else throw error
-    }
+    }.flowOn(Dispatchers.IO)
 
     suspend fun import(input: InputStream, sourceName: String, zone: ZoneId): Int = withContext(Dispatchers.IO) {
         val output = ByteArrayOutputStream()

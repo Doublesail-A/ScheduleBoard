@@ -83,8 +83,8 @@ class SchoolSyncRepository(
                 schedulePeriodic()
                 val (activeSession, page) = client.synchronize(session, password)
                 val updated = profile.copy(session = activeSession, year = page.year, term = page.term)
-                val events = expand(page, updated)
                 vault.write(updated)
+                val events = expand(page, updated)
                 schedule.replace(events, "教务 · ${label(updated)}")
                 markSuccess(updated)
                 events.size
@@ -112,8 +112,9 @@ class SchoolSyncRepository(
             try {
                 val (session, page) = client.synchronize(profile.session, profile.password)
                 val updated = profile.copy(session = session, year = page.year, term = page.term, firstWeekOverride = null)
-                val events = expand(page, updated)
+                // Keep a renewed session even when calendar resolution or parsing fails.
                 vault.write(updated)
+                val events = expand(page, updated)
                 schedule.replace(events, "教务 · ${label(updated)}")
                 markSuccess(updated)
                 true

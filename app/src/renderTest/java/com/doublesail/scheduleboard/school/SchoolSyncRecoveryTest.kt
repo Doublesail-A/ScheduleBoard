@@ -9,6 +9,8 @@ import java.io.IOException
 import java.nio.charset.Charset
 import java.time.Instant
 import java.time.LocalDate
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
@@ -36,7 +38,9 @@ class SchoolSyncRecoveryTest {
     private val accepted = "<span id=xhxm>fixture同学</span>"
     private val table = "<select name=xnd><option selected value=2026-2027>2026-2027</option></select>" +
         "<select name=xqd><option selected value=1>1</option></select><table id=Table1></table>"
-    private fun repository(vault: MemoryVault, responses: List<Any>): SchoolSyncRepository {
+    private fun repository(vault: MemoryVault, responses: List<Any>,
+        calendar: (String, String) -> SchoolCalendar = { _, _ -> SchoolCalendar(LocalDate.of(2026, 8, 30)) },
+    ): SchoolSyncRepository {
         val queue = ArrayDeque(responses)
         val client = SchoolClient(transport = { request ->
             requests += request
@@ -46,7 +50,7 @@ class SchoolSyncRecoveryTest {
             }
         }, decoder = { "abcd" })
         return SchoolSyncRepository(context, IcsScheduleRepository(context), client, vault,
-            calendar = { _, _ -> SchoolCalendar(LocalDate.of(2026, 8, 30)) }, schedulePeriodic = {}, nowMillis = { now })
+            calendar = calendar, schedulePeriodic = {}, nowMillis = { now })
     }
     @Test fun legacyNeedsLoginFlagDoesNotDisableRenewal() = runBlocking {
         prefs.edit().putBoolean("needs_login", true).putString("message", "旧版会话失效").commit()
@@ -115,5 +119,30 @@ class SchoolSyncRecoveryTest {
         assertTrue(repo.syncSaved())
         assertTrue(repo.state.value.requiresLogin)
         assertTrue(prefs.getBoolean("auto_login_blocked", false))
+    }
+    @Test fun concurrentAutomaticSyncsShareOneDeadline() = runBlocking {
+        val repo = repository(MemoryVault(original), listOf(table))
+        (1..8).map { async { repo.syncSaved(onlyIfDue = true) } }.awaitAll().forEach { assertTrue(it) }
+        assertEquals(1, requests.size)
+        assertEquals(now + SchoolSyncPolicy.IntervalMillis, prefs.getLong("next_sync_at", 0))
+    }
+    @Test fun renewedSessionSurvivesCalendarFailureWithoutReplacingCachedCourses() = runBlocking {
+        val schedule = IcsScheduleRepository(context)
+        schedule.replace(listOf(ScheduleEvent("offline", "cached", Instant.ofEpochMilli(now), Instant.ofEpochMilli(now + 60_000))), "fixture")
+        val vault = MemoryVault(original)
+        var unavailable = true
+        val repo = repository(vault, listOf(expired, login, "image", accepted, table, table)) { _, _ ->
+            if (unavailable) throw IllegalArgumentException("fixture calendar unavailable")
+            SchoolCalendar(LocalDate.of(2026, 8, 30))
+        }
+        assertFalse(repo.syncSaved())
+        assertNotEquals(original.session.token, vault.profile?.session?.token)
+        assertEquals("offline", schedule.snapshot.first().events.single().id)
+        assertFalse(repo.state.value.requiresLogin)
+        unavailable = false
+        now += 60_000
+        assertTrue(repo.syncSaved(onlyIfDue = true))
+        assertEquals(vault.profile?.session?.token, requests.last().url.substringAfter(".cn/").substringBefore('/'))
+        assertEquals(6, requests.size)
     }
 }

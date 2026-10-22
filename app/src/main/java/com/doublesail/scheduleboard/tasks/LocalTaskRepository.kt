@@ -6,7 +6,9 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import java.io.IOException
 import java.util.UUID
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import org.json.JSONArray
 import org.json.JSONObject
@@ -20,7 +22,7 @@ class LocalTaskRepository(context: Context) : TaskRepository {
         catch (_: Exception) { TaskSnapshot(error = "待办缓存无法读取，请检查本机存储") }
     }.catch { error ->
         if (error is IOException) emit(TaskSnapshot(error = "无法读取待办，请检查存储空间")) else throw error
-    }
+    }.flowOn(Dispatchers.IO)
 
     override suspend fun add(title: String) {
         require(title.isNotBlank() && title.trim().length <= 200) { "待办名称需要 1–200 个字符" }

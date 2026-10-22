@@ -14,17 +14,23 @@ object IcsParser {
     private val dateFormat = DateTimeFormatter.ofPattern("uuuuMMdd").withResolverStyle(ResolverStyle.STRICT)
     private val timeFormat = DateTimeFormatter.ofPattern("uuuuMMdd'T'HHmmss").withResolverStyle(ResolverStyle.STRICT)
     private val shortTimeFormat = DateTimeFormatter.ofPattern("uuuuMMdd'T'HHmm").withResolverStyle(ResolverStyle.STRICT)
+    private val unsupportedFields = setOf("RRULE", "RDATE", "EXDATE", "RECURRENCE-ID")
+    private val eventFields = setOf("UID", "DTSTART", "DTEND", "SUMMARY", "LOCATION", "DESCRIPTION", "STATUS")
     private data class Property(val name: String, val parameters: Map<String, String>, val value: String)
 
     fun parse(text: String, defaultZone: ZoneId): List<ScheduleEvent> {
         require(text.length <= 4 * 1024 * 1024) { "课表文件过大" }
         val lines = mutableListOf<String>()
-        text.removePrefix("\uFEFF").replace("\r\n", "\n").replace('\r', '\n').split('\n').forEach { line ->
+        var unfolded: StringBuilder? = null
+        text.removePrefix("\uFEFF").lineSequence().forEach { line ->
             if (line.startsWith(' ') || line.startsWith('\t')) {
-                require(lines.isNotEmpty()) { "ICS 折行格式不正确" }
-                lines[lines.lastIndex] += line.substring(1)
-            } else if (line.isNotBlank()) lines += line
+                requireNotNull(unfolded) { "ICS 折行格式不正确" }.append(line, 1, line.length)
+            } else if (line.isNotBlank()) {
+                unfolded?.let { lines += it.toString() }
+                unfolded = StringBuilder(line)
+            }
         }
+        unfolded?.let { lines += it.toString() }
         require(lines.firstOrNull()?.uppercase() == "BEGIN:VCALENDAR" &&
             lines.lastOrNull()?.uppercase() == "END:VCALENDAR") { "请选择 iFAFU 导出的完整 ICS 课表" }
         var zone = defaultZone
@@ -63,10 +69,10 @@ object IcsParser {
                 zone = ZoneId.of(property.value.trim())
             }
             if (components.lastOrNull() == "VEVENT") {
-                require(property.name !in setOf("RRULE", "RDATE", "EXDATE", "RECURRENCE-ID")) {
+                require(property.name !in unsupportedFields) {
                     "此 ICS 包含重复规则，请使用 iFAFU 的完整课表导出功能"
                 }
-                if (property.name in setOf("UID", "DTSTART", "DTEND", "SUMMARY", "LOCATION", "DESCRIPTION", "STATUS")) {
+                if (property.name in eventFields) {
                     require(current?.put(property.name, property) == null) { "ICS 事件字段重复" }
                 }
             }

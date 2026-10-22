@@ -82,6 +82,8 @@ Magisk 方式：可继续使用先前的 ScheduleBoard-Magisk-0.1.0.zip，在 Ma
 
 ## 版本管理
 
+0.3.0 已整合 PR #1 的 ICS 导入、缓存解析与教务会话保留优化。该 PR 基于 0.2.2 的历史分析记录见 [PROJECT-REVIEW.md](PROJECT-REVIEW.md)。
+
 公开仓库：[Doublesail-A/ScheduleBoard](https://github.com/Doublesail-A/ScheduleBoard)。主分支为 main，CHANGELOG.md 记录各版本；版本号位于 app/build.gradle.kts。仓库保留 0.2.0 基线与后续修复提交。
 
 GitHub Actions 在推送或 PR 时编译、运行单元测试/原生 Compose 测试与 Lint。main 上版本递增后自动构建固定签名 Release，上传 APK、签名信息、说明与 SHA-256 校验；PR 只验证。后续每个应用更新都必须递增版本并通过 GitHub 构建发布，不覆盖已发布二进制。仓库需一次性配置签名 Secret，详见 [GitHub 构建和发布](docs/RELEASES.md)；未配置时发布明确失败，不能用临时随机签名代替。

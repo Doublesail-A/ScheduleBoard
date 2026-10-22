@@ -51,4 +51,28 @@ class IcsParserTest {
     @Test fun cancelledEventsAreNotShown() {
         assertEquals(1, IcsParser.parse(calendar(event(), event("cancelled", "STATUS:CANCELLED")), zone).size)
     }
+    @Test fun manyFoldedLinesPreserveTheirContent() {
+        val title = "课".repeat(100_000)
+        val folded = "SUMMARY:" + "课\r\n ".repeat(99_999) + "课"
+        val input = event().replace("SUMMARY:植物学（双语课）", folded)
+        assertEquals(title, IcsParser.parse(calendar(input), zone).single().title)
+    }
+    @Test fun lineEndingsBomAndTabContinuationsKeepExistingContent() {
+        val input = "\uFEFF" + calendar(event().replace("SUMMARY:植物学（双语课）", "SUMMARY:植物学\r\n\t（双语课）"))
+        for (ending in listOf("\r\n", "\n", "\r")) {
+            val parsed = IcsParser.parse(input.replace("\r\n", ending), zone).single()
+            assertEquals("植物学（双语课）", parsed.title)
+        }
+    }
+    @Test fun concatenatedCalendarsKeepExistingImportBehavior() {
+        assertEquals(2, IcsParser.parse(calendar(event()) + calendar(event("second")), zone).size)
+    }
+    @Test fun nestedCalendarsKeepExistingImportBehavior() {
+        assertEquals(1, IcsParser.parse(calendar(calendar(event())), zone).size)
+    }
+    @Test fun allDayDurationKeepsExistingOneDayFallback() {
+        val input = "BEGIN:VEVENT\nUID:day\nDTSTART;VALUE=DATE:20261021\nDURATION:P3D\nSUMMARY:日程\nEND:VEVENT"
+        val parsed = IcsParser.parse(calendar(input), zone).single()
+        assertEquals(Instant.parse("2026-10-21T16:00:00Z"), parsed.endExclusive)
+    }
 }
