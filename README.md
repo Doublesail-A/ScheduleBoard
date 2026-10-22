@@ -75,6 +75,8 @@ Magisk 方式：可继续使用先前的 ScheduleBoard-Magisk-0.1.0.zip，在 Ma
 
 构建详情、检查结果与未验证边界见 BUILD-STATUS.md。本版是 Debug 签名测试 APK；正式发布请配置自己的签名。
 
+基于 0.2.2 的代码分析、导入性能与同步恢复优化见 [PROJECT-REVIEW.md](PROJECT-REVIEW.md)。
+
 ## 版本管理
 
 公开仓库：[Doublesail-A/ScheduleBoard](https://github.com/Doublesail-A/ScheduleBoard)。主分支为 main，CHANGELOG.md 记录各版本；版本号位于 app/build.gradle.kts。仓库保留 0.2.0 基线与后续修复提交。
