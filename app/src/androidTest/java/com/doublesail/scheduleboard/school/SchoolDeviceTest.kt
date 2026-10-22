@@ -3,7 +3,9 @@ package com.doublesail.scheduleboard.school
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.doublesail.scheduleboard.MainActivity
 import com.doublesail.scheduleboard.ScheduleBoardApplication
 import java.io.File
 import java.security.SecureRandom
@@ -16,6 +18,42 @@ import kotlinx.coroutines.runBlocking
 
 @RunWith(AndroidJUnit4::class)
 class SchoolDeviceTest {
+    @Test fun foregroundRecoversExpiredSessionAndLegacyFlagAtNextMinuteCheck() {
+        val app = ApplicationProvider.getApplicationContext<ScheduleBoardApplication>()
+        val vault = SchoolSessionVault(app)
+        val saved = vault.read()
+        assumeNotNull("Log in on the phone before this optional integration test", saved?.password)
+        val profile = requireNotNull(saved)
+        val keyguard = app.getSystemService(Context.KEYGUARD_SERVICE) as android.app.KeyguardManager
+        val power = app.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+        assertTrue("Wake and unlock the phone before testing the visible board", power.isInteractive && !keyguard.isKeyguardLocked)
+        val alphabet = "abcdefghijklmnopqrstuvwxyz12345"
+        val random = SecureRandom()
+        val unused = "(" + (1..24).map { alphabet[random.nextInt(alphabet.length)] }.joinToString("") + ")"
+        val prefs = app.getSharedPreferences("school_sync_status", Context.MODE_PRIVATE)
+        val started = System.currentTimeMillis()
+        vault.write(profile.copy(session = profile.session.copy(token = unused, cookie = "")))
+        prefs.edit().putBoolean("needs_login", true).remove("auto_login_blocked")
+            .putLong("next_sync_at", started + 5_000).commit()
+        try {
+            ActivityScenario.launch(MainActivity::class.java).use {
+                val deadline = android.os.SystemClock.elapsedRealtime() + 85_000
+                while (android.os.SystemClock.elapsedRealtime() < deadline && prefs.getLong("last_sync", 0) < started) {
+                    Thread.sleep(250)
+                }
+                assertTrue("Visible board must retry automatically without user input", prefs.getLong("last_sync", 0) >= started)
+                assertFalse("Legacy failure marker must be cleared", prefs.getBoolean("needs_login", true))
+                assertFalse("Recovered login must not remain blocked", app.schoolSync.state.value.requiresLogin)
+                assertTrue("Renewed credentials must remain saved", !vault.read()?.password.isNullOrEmpty())
+            }
+        } finally {
+            if (vault.read()?.session?.token == unused) {
+                vault.write(profile)
+                prefs.edit().putLong("next_sync_at", 0).apply()
+            }
+        }
+    }
+
     @Test fun savedAccountCanRenewSessionAndSyncWithoutUserInput() {
         val app = ApplicationProvider.getApplicationContext<ScheduleBoardApplication>()
         val vault = SchoolSessionVault(app)

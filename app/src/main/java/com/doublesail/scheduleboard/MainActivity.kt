@@ -29,6 +29,8 @@ import com.doublesail.scheduleboard.ui.BoardApp
 import com.doublesail.scheduleboard.ui.BoardViewModel
 import com.doublesail.scheduleboard.ui.StartupEnvironment
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 class MainActivity : ComponentActivity() {
     private lateinit var windowController: BoardWindowController
@@ -63,8 +65,16 @@ class MainActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                (application as ScheduleBoardApplication).settingsRepository.settings.collect {
-                    windowController.apply(it)
+                launch {
+                    (application as ScheduleBoardApplication).settingsRepository.settings.collect {
+                        windowController.apply(it)
+                    }
+                }
+                launch {
+                    while (isActive) {
+                        (application as ScheduleBoardApplication).schoolSync.syncIfDue()
+                        delay(60_000L)
+                    }
                 }
             }
         }

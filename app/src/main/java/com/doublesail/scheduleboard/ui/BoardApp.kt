@@ -85,7 +85,7 @@ fun BoardApp(
                     CircularProgressIndicator()
                 }
             } else {
-                BoardDashboard(state.copy(syncWarning = if (school.requiresLogin) "教务登录已失效，点击时钟重新登录"
+                BoardDashboard(state.copy(syncWarning = if (school.requiresLogin) school.message ?: "请点击时钟更新教务登录信息"
                     else school.message?.takeIf { school.connected }), onOpenSettings = { settingsOpen = true },
                     onAddTask = { addingTask = true }, onTaskCompleted = viewModel::setTaskCompleted,
                     onEventClick = { selectedEvent = it })
@@ -191,7 +191,7 @@ private fun SettingsDialog(
                 FilledTonalButton(onClick = onSchoolLogin) { Text(if (school.connected) "重新登录 / 更换账号" else "登录福建农林大学教务") }
                 if (school.connected) {
                     Text(school.termLabel, style = MaterialTheme.typography.bodyMedium)
-                    TextButton(onClick = onSyncSchool, enabled = !school.syncing && !school.requiresLogin) {
+                    TextButton(onClick = onSyncSchool, enabled = !school.syncing) {
                         Text(if (school.syncing) "正在同步…" else "立即同步课表")
                     }
                     TextButton(onClick = onLogoutSchool) { Text("退出教务并停止自动同步") }

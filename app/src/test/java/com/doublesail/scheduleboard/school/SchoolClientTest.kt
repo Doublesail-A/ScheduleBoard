@@ -78,10 +78,30 @@ class SchoolClientTest {
             client("<input name=txtUserName>", loginPage, "image", success, "<input name=txtUserName>")
                 .synchronize(SchoolSession("123456789", "测试", token, ""), "fixture-password")
             fail()
-        } catch (_: SchoolLoginRequired) { assertEquals(5, requests.size) }
+        } catch (_: SchoolSessionUnavailable) { assertEquals(5, requests.size) }
+    }
+    @Test fun maintenancePageDoesNotTriggerCredentialLogin() {
+        try {
+            client("<html><h1>Service temporarily unavailable</h1></html>")
+                .synchronize(SchoolSession("123456789", "测试", token, ""), "fixture-password")
+            fail()
+        } catch (error: IOException) {
+            assertFalse(error is SchoolLoginRequired)
+            assertEquals(1, requests.size)
+        }
     }
     @Test(expected = IOException::class) fun unrecognizedLoginPageIsNotReportedAsWrongPassword() {
         client(loginPage, "image", "<html>maintenance</html>").login("123456789", "fixture-password")
+    }
+    @Test fun serverBusyNoticeMentioningUsersDoesNotRejectSavedCredentials() {
+        try {
+            client(loginPage, "image", "<script>alert('当前用户较多，请稍后访问')</script>")
+                .login("123456789", "fixture-password")
+            fail()
+        } catch (error: IOException) {
+            assertFalse(error is SchoolAuthenticationException)
+            assertEquals(3, requests.size)
+        }
     }
     @Test(expected = IllegalArgumentException::class) fun transportRejectsOtherHostsBeforeConnecting() {
         HttpSchoolTransport().execute(SchoolRequest("https://example.org/"))

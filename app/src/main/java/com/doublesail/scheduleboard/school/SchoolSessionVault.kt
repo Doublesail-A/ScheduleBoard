@@ -19,9 +19,15 @@ data class SchoolProfile(val session: SchoolSession, val year: String, val term:
 }
 
 /** Credentials and session are encrypted together with an app-owned Android Keystore key. */
-class SchoolSessionVault(context: Context) {
+interface SchoolProfileStore {
+    fun read(): SchoolProfile?
+    fun write(profile: SchoolProfile)
+    fun clear()
+}
+
+class SchoolSessionVault(context: Context) : SchoolProfileStore {
     private val file = AtomicFile(File(context.filesDir, "school-session.enc"))
-    fun read(): SchoolProfile? {
+    override fun read(): SchoolProfile? {
         if (!file.baseFile.exists()) return null
         val bytes = file.openRead().use { it.readBytes() }
         require(bytes.size in 29..65_536 && bytes[0].toInt() == 1) { "登录缓存格式不正确" }
@@ -34,7 +40,7 @@ class SchoolSessionVault(context: Context) {
             json.optString("password").takeIf(String::isNotEmpty))
     }
 
-    fun write(profile: SchoolProfile) {
+    override fun write(profile: SchoolProfile) {
         val json = JSONObject().apply {
             put("account", profile.session.account); put("name", profile.session.name)
             put("token", profile.session.token); put("cookie", profile.session.cookie)
@@ -49,7 +55,7 @@ class SchoolSessionVault(context: Context) {
         try { output.write(bytes); file.finishWrite(output) } catch (error: Exception) { file.failWrite(output); throw error }
     }
 
-    fun clear() { file.delete() }
+    override fun clear() { file.delete() }
     private fun key(): SecretKey {
         val keys = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         (keys.getKey(Alias, null) as? SecretKey)?.let { return it }

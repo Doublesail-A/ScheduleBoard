@@ -91,6 +91,7 @@ data class TimetablePage(val html: String, val year: String, val term: String) {
 class SchoolLoginRequired(message: String = "教务会话已失效，请重新登录；缓存课表仍可离线显示") : IOException(message)
 class SchoolAuthenticationException(message: String) : IOException(message)
 class SchoolCaptchaException : IOException("验证码自动识别暂未成功，请重试")
+class SchoolSessionUnavailable : IOException("教务会话暂未恢复，将自动重试；继续显示缓存课表")
 fun interface SchoolCaptchaDecoder { fun recognize(image: ByteArray): String }
 
 class SchoolClient(private val transport: SchoolTransport = HttpSchoolTransport(),
@@ -129,7 +130,8 @@ class SchoolClient(private val transport: SchoolTransport = HttpSchoolTransport(
             val alert = Regex("alert\\(['\"]([^'\"]+)['\"]\\)").find(response.html())?.groupValues?.get(1)
             if (alert?.contains("验证码") == true) throw SchoolCaptchaException()
             if (document.text().contains("输入原密码")) throw SchoolAuthenticationException("教务要求先修改初始密码，请在学校教务完成后重试")
-            if (alert?.contains("密码") == true || alert?.contains("用户") == true || alert?.contains("学号") == true)
+            val rejected = Regex("(?:用户名|学号|用户|账号|密码).{0,12}(?:错误|不正确|不存在|无效)|(?:错误|不正确).{0,6}(?:密码|用户名|学号|账号)")
+            if (alert != null && rejected.containsMatchIn(alert))
                 throw SchoolAuthenticationException("学号或教务密码不正确，请核对后重试")
             throw IOException("教务未返回登录成功信息，请稍后重试")
         }
@@ -142,7 +144,12 @@ class SchoolClient(private val transport: SchoolTransport = HttpSchoolTransport(
         val url = base + "xskbcx.aspx?xh=" + session.account + "&xm=" + URLEncoder.encode(session.name, "GB2312") + "&gnmkdm=N121602"
         val html = transport.execute(SchoolRequest(url, referer = referer, cookie = session.cookie)).html()
         val document = Jsoup.parse(html)
-        if (document.getElementById("Table1") == null) throw SchoolLoginRequired()
+        if (document.getElementById("Table1") == null) {
+            val loginForm = document.selectFirst("input[name=txtUserName], input[name=TextBox2]") != null
+            val loginNotice = Regex("请.{0,8}(?:登录|登陆)|尚未.{0,8}(?:登录|登陆)|还没有.{0,8}(?:登录|登陆)|重新.{0,8}(?:登录|登陆)|Object moved|302 Found|default2\\.aspx|logout\\.aspx", RegexOption.IGNORE_CASE)
+            if (loginForm || loginNotice.containsMatchIn(html)) throw SchoolLoginRequired()
+            throw IOException("教务暂未返回课表页面，将自动重试")
+        }
         fun selected(name: String) = document.selectFirst("select[name=$name] option[selected]")?.`val`()
             ?: document.selectFirst("select[name=$name] option")?.`val`().orEmpty()
         val year = selected("xnd")
@@ -157,7 +164,8 @@ class SchoolClient(private val transport: SchoolTransport = HttpSchoolTransport(
         catch (error: SchoolLoginRequired) {
             if (password.isNullOrEmpty()) throw error
             val renewed = login(session.account, password)
-            renewed to timetable(renewed)
+            try { renewed to timetable(renewed) }
+            catch (_: SchoolLoginRequired) { throw SchoolSessionUnavailable() }
         }
 
     private fun base(token: String): String {

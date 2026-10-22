@@ -47,7 +47,7 @@ class BoardViewModel(
     private val school: SchoolSyncRepository,
 ) : ViewModel() {
     val schoolState = school.state
-    fun syncSchool() { viewModelScope.launch { school.syncSaved() } }
+    fun syncSchool() { viewModelScope.launch { school.syncSaved(force = true) } }
     fun logoutSchool() { viewModelScope.launch { school.logout() } }
     private val operation = MutableStateFlow(OperationState())
     private val now = clock.ticks.stateIn(
