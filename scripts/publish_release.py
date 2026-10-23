@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import time
 
 version = os.environ["VERSION"]
 tag = f"v{version}"
@@ -20,8 +21,15 @@ def find_release():
 release = find_release()
 if release is None:
     gh("release", "create", tag, "--draft", "--target", sha, "--title", f"ScheduleBoard {version}", "--notes-file", "release-notes.md")
-    release = find_release()
-if release is None or not release["draft"] or release["target_commitish"] != sha:
+    # GitHub's collection can briefly lag behind successful draft creation.
+    for attempt in range(5):
+        release = find_release()
+        if release is not None:
+            break
+        time.sleep(min(2 ** attempt, 4))
+    if release is None:
+        raise SystemExit("New draft is not visible yet; rerun this workflow to resume it safely")
+if not release["draft"] or release["target_commitish"] != sha:
     raise SystemExit("Refusing to overwrite a published release or a draft from another commit")
 endpoint = f"repos/{repository}/releases/{release['id']}"
 

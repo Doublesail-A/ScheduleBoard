@@ -26,6 +26,7 @@ class PublishReleaseTest(unittest.TestCase):
         self.commands = []
         self.created = False
         self.existing = True
+        self.stale_reads = 0
 
     def tearDown(self):
         os.chdir(self.previous_cwd)
@@ -35,6 +36,9 @@ class PublishReleaseTest(unittest.TestCase):
         self.commands.append(command)
         if command[1] == "api":
             if "?per_page=100" in command[2]:
+                if self.created and self.stale_reads > 0:
+                    self.stale_reads -= 1
+                    return "[]"
                 return json.dumps([self.release] if self.existing or self.created else [])
             return json.dumps(dict(self.release, assets=self.remote_assets))
         if command[1:3] == ["release", "create"]:
@@ -43,7 +47,7 @@ class PublishReleaseTest(unittest.TestCase):
 
     def run_publisher(self):
         with patch.dict(os.environ, {"VERSION": "0.3.0", "GITHUB_REPOSITORY": "fixture/repo", "GITHUB_SHA": "fixture-sha"}), \
-                patch("subprocess.check_output", side_effect=self.fake_gh):
+                patch("subprocess.check_output", side_effect=self.fake_gh), patch("time.sleep"):
             with contextlib.redirect_stdout(io.StringIO()):
                 runpy.run_path(str(SCRIPT), run_name="__main__")
 
@@ -77,6 +81,13 @@ class PublishReleaseTest(unittest.TestCase):
         self.run_publisher()
         self.assertFalse(self.created)
         self.assertTrue(self.published())
+
+    def test_new_draft_readback_retries_temporary_visibility_delay(self):
+        self.existing = False
+        self.stale_reads = 2
+        self.run_publisher()
+        self.assertTrue(self.published())
+        self.assertEqual(0, self.stale_reads)
 
     def test_missing_remote_asset_leaves_release_as_draft(self):
         self.remote_assets.pop()
