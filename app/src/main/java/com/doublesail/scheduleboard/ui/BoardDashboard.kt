@@ -1,7 +1,5 @@
 package com.doublesail.scheduleboard.ui
 
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
 
@@ -40,7 +38,6 @@ fun BoardDashboard(
     onAddTask: () -> Unit,
     onTaskCompleted: (String, Boolean) -> Unit,
     onEventClick: (ScheduleEvent) -> Unit,
-    onOpenPomodoro: () -> Unit = {},
     onEditTask: (BoardTask) -> Unit = {},
 ) {
     BoxWithConstraints(Modifier.fillMaxSize().background(lerp(MaterialTheme.colorScheme.background, MaterialTheme.colorScheme.secondaryContainer, .48f))) {
@@ -51,12 +48,7 @@ fun BoardDashboard(
         ) {
             Row(Modifier.fillMaxSize().padding(start = (50 * unit).dp, end = (40 * unit).dp,
                 top = (20 * unit).dp, bottom = (74 * unit).dp)) {
-                Column(Modifier.weight(2.8f).fillMaxHeight().pointerInput(onOpenPomodoro) {
-                    var distance = 0f
-                    detectVerticalDragGestures(onDragStart = { distance = 0f }, onDragEnd = {
-                        if (distance > 32.dp.toPx()) onOpenPomodoro()
-                    }, onDragCancel = { distance = 0f }) { _, amount -> distance += amount }
-                }) {
+                Column(Modifier.weight(2.8f).fillMaxHeight()) {
                     Text(
                         state.now.format(DateTimeFormatter.ofPattern("HH:mm")),
                         fontSize = (256 * unit).sp, lineHeight = (270 * unit).sp,
@@ -101,7 +93,7 @@ fun BoardDashboard(
                             TextButton(onClick = onAddTask) { Text("添加待办") }
                         }
                     } else {
-                        LazyColumn(Modifier.weight(1f)) {
+                        LazyColumn(Modifier.weight(1f).independentTaskScroll()) {
                             items(state.tasks, key = { it.id }) { task -> TaskRow(task, unit, onTaskCompleted, onEditTask) }
                         }
                     }

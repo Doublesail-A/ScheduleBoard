@@ -23,6 +23,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.doublesail.scheduleboard.data.BoardSettings
 import com.doublesail.scheduleboard.display.BoardWindowController
+import com.doublesail.scheduleboard.display.DisplayPolicy
 import com.doublesail.scheduleboard.startup.HomeController
 import com.doublesail.scheduleboard.startup.StartupNotifications
 import com.doublesail.scheduleboard.ui.BoardApp
@@ -50,6 +51,9 @@ class MainActivity : ComponentActivity() {
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
         refreshEnvironment()
     }
+    private val brightnessPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (Settings.System.canWrite(this)) enableAutomaticBrightness() else refreshEnvironment()
+    }
     private val timetablePicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             val resolver = applicationContext.contentResolver
@@ -63,6 +67,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         windowController = BoardWindowController(this)
         windowController.apply(BoardSettings())
+        windowController.setDisplayMode(DisplayPolicy.evaluate(emptyList(), java.time.ZonedDateTime.now()))
         windowController.setBootWakeup(intent.getBooleanExtra(StartupNotifications.ExtraBootLaunch, false))
 
         lifecycleScope.launch {
@@ -99,6 +104,8 @@ class MainActivity : ComponentActivity() {
                     if (Build.VERSION.SDK_INT >= 31) startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
                         "package:$packageName".toUri()))
                 } }, openPomodoroRequest = pomodoroRequest,
+                onDisplayMode = { windowController.setDisplayMode(it) },
+                onAutomaticBrightness = ::enableAutomaticBrightness,
                 onDarkTheme = { dark ->
                     WindowCompat.getInsetsController(window, window.decorView).apply {
                         isAppearanceLightStatusBars = !dark
@@ -138,6 +145,8 @@ class MainActivity : ComponentActivity() {
         environment = StartupEnvironment(
             isDefaultHome = homeController.isDefaultHome(),
             notificationsEnabled = StartupNotifications.canNotify(this),
+            automaticBrightness = Settings.System.getInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE,
+                Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL) == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC,
         )
     }
 
@@ -150,6 +159,16 @@ class MainActivity : ComponentActivity() {
             startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
         } else {
             startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:$packageName".toUri()))
+        }
+    }
+
+    private fun enableAutomaticBrightness(): Unit = performSystemAction {
+        if (Settings.System.canWrite(this)) {
+            if (!Settings.System.putInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS_MODE,
+                Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC)) systemActionFailed = true
+            refreshEnvironment()
+        } else {
+            brightnessPermission.launch(Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, "package:$packageName".toUri()))
         }
     }
 

@@ -11,6 +11,17 @@ import com.doublesail.scheduleboard.data.BoardSettings
 class BoardWindowController(private val activity: Activity) {
     private var settings = BoardSettings()
 
+    fun setDisplayMode(mode: DisplayMode) {
+        // Zero requests the device minimum; this is not a power-off or a keyguard operation.
+        val brightness = if (mode == DisplayMode.SYSTEM) WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+            else WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF
+        val attributes = activity.window.attributes
+        if (attributes.screenBrightness != brightness) {
+            attributes.screenBrightness = brightness
+            activity.window.attributes = attributes
+        }
+    }
+
     fun apply(value: BoardSettings) {
         settings = value
         val window = activity.window

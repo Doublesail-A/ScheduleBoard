@@ -1,4 +1,21 @@
-# 0.3.0 验证记录
+# 0.4.0 验证记录
+
+日期：2026-11-10（北京时间）。包名 com.doublesail.scheduleboard；versionCode 6；最低 API 24，目标 API 36。基于 GitHub main 的 4e3925e 开发。
+
+- 本地 assembleDebug、assembleDebugAndroidTest、固定签名 assembleRelease（R8）、lintDebug 与 lintRelease 成功。
+- 108 项 Android 主机测试通过，0 失败、0 错误；13 项 Python 发布脚本测试通过。
+- 新增 12 项纯逻辑课表休屏测试：10/5 分钟边界、20 分钟合并边界（含秒数）、整上午课间、午间分段、重复/重叠/乱序课程、凌晨优先级、当地时区、全天/非课程排除、短课、空课表和跨午夜课程。
+- 原生窗口测试验证课时和夜间为最低亮度、正常模式恢复系统亮度、常亮开关不被亮度规则篡改。
+- 官方 Compose Pager 交互测试验证下拉打开/上推返回、待办列表上下滚动隔离、手指尚未松开时页面连续移动、短慢拖动松手回弹。原生截图确认半途拖动时两页均可见；休屏纯黑且可点击临时查看。
+- 已检查原生 1280×720 浅/深色主页、浅/深色番茄钟、半途拖动及纯黑休屏渲染。仅使用测试数据。
+- Debug 与 Release Lint 均为 0 错误、31 警告、1 提示；未禁用检查。
+- 本地 Release APK 的 v2 签名和固定证书检查通过，版本信息为 0.4.0 / 6。分发使用 GitHub Actions 生成的 APK；[工作流](https://github.com/Doublesail-A/ScheduleBoard/actions/workflows/android.yml)与 [v0.4.0 Release](https://github.com/Doublesail-A/ScheduleBoard/releases/tag/v0.4.0)为正式发布状态入口。
+
+本轮 ADB 没有检测到设备，未进行实机安装、环境光传感器测试或跨真实课时/凌晨长时间运行测试。XZ1 Compact 为 LCD：纯黑界面不等于物理关闭背光，窗口亮度 0 请求的是设备允许的最低背光。本方案维持应用前台和默认常亮，不依赖锁屏后的后台唤醒；手动关闭常亮/电源键关屏、离开应用后由系统控制。系统自动亮度须已开启；设置页提供一次性特殊访问授权入口，授权后启用系统自动模式，课时和夜间仅覆盖应用窗口亮度。规则按缓存课表和本机当地时间计算，分钟/日期/时间/时区变化及课表更新后重新判断。
+
+---
+
+# 0.3.0 历史验证记录
 
 日期：2026-10-23（北京时间）。包名 com.doublesail.scheduleboard；versionCode 5；最低 API 24，目标 API 36。
 

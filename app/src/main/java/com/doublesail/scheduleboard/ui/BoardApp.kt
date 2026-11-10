@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
@@ -52,10 +53,14 @@ import androidx.compose.runtime.LaunchedEffect
 import com.doublesail.scheduleboard.tasks.BoardTask
 import com.doublesail.scheduleboard.tasks.google.GoogleTasksRepository
 import com.doublesail.scheduleboard.pomodoro.PomodoroRepository
+import com.doublesail.scheduleboard.display.DisplayMode
+import com.doublesail.scheduleboard.display.DisplayPolicy
+import kotlinx.coroutines.delay
 
 data class StartupEnvironment(
     val isDefaultHome: Boolean = false,
     val notificationsEnabled: Boolean = false,
+    val automaticBrightness: Boolean = false,
 )
 
 @Composable
@@ -75,6 +80,8 @@ fun BoardApp(
     onGoogleTasks: () -> Unit,
     onExactAlarmSettings: () -> Unit,
     openPomodoroRequest: Int = 0,
+    onDisplayMode: (DisplayMode) -> Unit = {},
+    onAutomaticBrightness: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val school by viewModel.schoolState.collectAsStateWithLifecycle()
@@ -82,7 +89,10 @@ fun BoardApp(
     val googleStatus by googleTasks.status.collectAsStateWithLifecycle()
     val timer by pomodoro.state.collectAsStateWithLifecycle()
     val remaining by pomodoro.remaining.collectAsStateWithLifecycle()
-    var timerOpen by rememberSaveable { mutableStateOf(false) }
+    val pager = rememberPagerState(pageCount = { 2 })
+    val timerOpen = pager.targetPage == 1
+    val displayMode = remember(state.schedule.events, state.now) { DisplayPolicy.evaluate(state.schedule.events, state.now) }
+    var peeking by remember { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<BoardTask?>(null) }
     var editTitle by remember { mutableStateOf("") }
     var confirmDelete by remember { mutableStateOf(false) }
@@ -94,9 +104,13 @@ fun BoardApp(
     var savingTask by remember { mutableStateOf(false) }
     var selectedEvent by remember { mutableStateOf<ScheduleEvent?>(null) }
     val scope = rememberCoroutineScope()
-    LaunchedEffect(openPomodoroRequest) { if (openPomodoroRequest > 0) timerOpen = true }
+    LaunchedEffect(openPomodoroRequest) { if (openPomodoroRequest > 0) pager.animateScrollToPage(1) }
+    LaunchedEffect(displayMode) { if (displayMode != DisplayMode.CLASS_REST) peeking = false }
+    LaunchedEffect(peeking) { if (peeking) { delay(120_000); peeking = false } }
+    val appliedDisplayMode = if (displayMode == DisplayMode.CLASS_REST && peeking) DisplayMode.SYSTEM else displayMode
+    LaunchedEffect(appliedDisplayMode) { onDisplayMode(appliedDisplayMode) }
     BackHandler(enabled = environment.isDefaultHome && !settingsOpen && !timerOpen) { settingsOpen = true }
-    BackHandler(enabled = timerOpen) { timerOpen = false }
+    BackHandler(enabled = timerOpen) { scope.launch { pager.animateScrollToPage(0) } }
 
     ScheduleBoardTheme(settings, onDarkTheme) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -104,20 +118,23 @@ fun BoardApp(
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
-            } else if (timerOpen) {
-                PomodoroScreen(timer, remaining, onToggle = { scope.launch { pomodoro.toggle() } },
-                    onReset = { scope.launch { pomodoro.reset() } },
-                    onSelect = { phase, minutes -> scope.launch { pomodoro.select(phase, minutes) } },
-                    onNext = { scope.launch { pomodoro.next() } }, onBack = { timerOpen = false },
-                    precise = pomodoro.exactAlarmsAllowed, onExactAlarmSettings = onExactAlarmSettings,
-                    notifications = environment.notificationsEnabled, onNotifications = onEnableNotifications)
             } else {
-                BoardDashboard(state.copy(syncWarning = if (school.requiresLogin) school.message ?: "请点击时钟更新教务登录信息"
-                    else school.message?.takeIf { school.connected }), onOpenSettings = { settingsOpen = true },
-                    onAddTask = { addingTask = true }, onTaskCompleted = viewModel::setTaskCompleted,
-                    onEventClick = { selectedEvent = it }, onOpenPomodoro = { timerOpen = true },
-                    onEditTask = { editingTask = it; editTitle = it.title })
+                BoardPager(pager, dashboard = {
+                    BoardDashboard(state.copy(syncWarning = if (school.requiresLogin) school.message ?: "请点击时钟更新教务登录信息"
+                        else school.message?.takeIf { school.connected }), onOpenSettings = { settingsOpen = true },
+                        onAddTask = { addingTask = true }, onTaskCompleted = viewModel::setTaskCompleted,
+                        onEventClick = { selectedEvent = it },
+                        onEditTask = { editingTask = it; editTitle = it.title })
+                }, timer = {
+                    PomodoroScreen(timer, remaining, onToggle = { scope.launch { pomodoro.toggle() } },
+                        onReset = { scope.launch { pomodoro.reset() } },
+                        onSelect = { phase, minutes -> scope.launch { pomodoro.select(phase, minutes) } },
+                        onNext = { scope.launch { pomodoro.next() } }, onBack = { scope.launch { pager.animateScrollToPage(0) } },
+                        precise = pomodoro.exactAlarmsAllowed, onExactAlarmSettings = onExactAlarmSettings,
+                        notifications = environment.notificationsEnabled, onNotifications = onEnableNotifications)
+                })
             }
+            if (appliedDisplayMode == DisplayMode.CLASS_REST) DisplayRestOverlay { peeking = true }
         }
         if (settingsOpen) {
             SettingsDialog(
@@ -141,7 +158,8 @@ fun BoardApp(
                 googleSummary = if (!google.connected) "当前使用本机待办" else
                     "${google.listTitle} · ${google.edits.size} 项待上传" + if (googleStatus.syncing) " · 同步中" else "",
                 googleMessage = googleStatus.message, onGoogleTasks = onGoogleTasks,
-                onPomodoro = { settingsOpen = false; timerOpen = true },
+                onPomodoro = { settingsOpen = false; scope.launch { pager.animateScrollToPage(1) } },
+                onAutomaticBrightness = onAutomaticBrightness,
             )
         }
         editingTask?.let { task ->
@@ -234,6 +252,7 @@ private fun SettingsDialog(
     googleMessage: String?,
     onGoogleTasks: () -> Unit,
     onPomodoro: () -> Unit,
+    onAutomaticBrightness: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -275,6 +294,14 @@ private fun SettingsDialog(
                 state.taskError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 TextButton(onClick = onPomodoro) { Text("打开番茄钟（主页左侧下滑）") }
                 HorizontalDivider()
+                Text("智能亮度", style = MaterialTheme.typography.titleSmall)
+                Text("上课 10 分钟后纯黑休屏，最后一节下课前 5 分钟恢复；间隔不超过 20 分钟的课程合并。点击黑屏可临时查看两分钟。",
+                    style = MaterialTheme.typography.bodySmall)
+                Text("02:00–05:00 强制最低亮度，其他时段跟随系统亮度；保持常亮需开启下方开关。",
+                    style = MaterialTheme.typography.bodySmall)
+                Text(if (environment.automaticBrightness) "系统自动亮度已开启" else "系统目前为手动亮度，请启用自动亮度。",
+                    style = MaterialTheme.typography.bodySmall)
+                if (!environment.automaticBrightness) TextButton(onClick = onAutomaticBrightness) { Text("启用系统自动亮度") }
                 ToggleRow(stringResource(R.string.keep_screen_on), settings.keepScreenOn, onKeepScreenOn)
                 ToggleRow(stringResource(R.string.immersive), settings.immersive, onImmersive)
                 ToggleRow(
